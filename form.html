@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Order Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Load EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <script>
+    (function() {
+      emailjs.init("H7uvEyYP-Qq8Mfp8H"); // ✅ Your Public Key
+    })();
+
+    function sendMail(event) {
+  event.preventDefault();
+
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+  if (cart.length === 0) {
+    alert("❌ Your cart is empty!");
+    return;
+  }
+
+  // ✅ Create HTML rows for each product
+  let productRows = cart.map(item => `
+    <tr>
+      <td style="text-align:center; border:1px solid #ddd; padding:8px;">
+        <img src="${item.img}" width="60" height="60" style="object-fit:contain;">
+      </td>
+      <td style="border:1px solid #ddd; padding:8px;">${item.productName}</td>
+      <td style="text-align:center; border:1px solid #ddd; padding:8px;">${item.quantity}</td>
+      <td style="text-align:right; border:1px solid #ddd; padding:8px;">₹${item.price}</td>
+    </tr>
+  `).join("");
+
+  // Calculate totals
+  let subtotal = 0;
+  cart.forEach(item => {
+    let price = parseInt((item.price + "").replace(/[^\d]/g, "")) || 0;
+    subtotal += price * item.quantity;
+  });
+  let tax = subtotal * 0.10;
+  let shipping = subtotal > 500 ? 0 : 50;
+  let total = subtotal + tax + shipping;
+
+  // ✅ Send to EmailJS
+  emailjs.send("service_gbq4597", "template_q8nuwzk", {
+    name: document.getElementById("name").value,
+    phone: document.getElementById("phone").value,
+    email: document.getElementById("email").value,
+    address: document.getElementById("address").value,
+    pincode: document.getElementById("pincode").value,
+
+    items: productRows,   // 🖼 HTML product rows
+    subtotal: subtotal,
+    tax: tax,
+    shipping: shipping,
+    total: total
+  })
+  .then(() => {
+    alert("✅ Order details sent to your email!");
+    localStorage.removeItem('cart');
+    document.getElementById("orderForm").reset();
+    window.location.href = "amazon.html";
+  }, (error) => {
+    alert("❌ Failed to send. Error: " + JSON.stringify(error));
+  });
+}
+
+  </script>
+
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f4f4f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    form {
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+      width: 350px;
+    }
+    h2 { margin-bottom: 15px; text-align: center; }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      background: #ff9900;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover { background: #e68a00; }
+  </style>
+</head>
+<body>
+  <form id="orderForm" onsubmit="sendMail(event)">
+    <h2>Enter Your Details</h2>
+    <input type="text" id="name" placeholder="Full Name" required>
+    <input type="tel" id="phone" placeholder="Phone Number" required>
+    <input type="email" id="email" placeholder="Email Address" required>
+    <textarea id="address" placeholder="Home Address" required></textarea>
+    <input type="text" id="pincode" placeholder="Pincode" required>
+    <button type="submit">Submit</button>
+  </form>
+</body>
+</html>
